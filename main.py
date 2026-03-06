@@ -1,4 +1,4 @@
-import discord
+import discord  # 小文字に直したで！
 from discord import app_commands
 import os
 
@@ -7,7 +7,8 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 class MyClient(discord.Client):
     def __init__(self):
-        super().__init__(intents=discord.Intents.default())
+        # 権限を default から all に変更したで！
+        super().__init__(intents=discord.Intents.all())
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self):
@@ -15,9 +16,9 @@ class MyClient(discord.Client):
 
 client = MyClient()
 
-# データの一時保持（Renderの再起動まで維持）
-game_data = {} # {message_id: {day: {user_id: {"name": str, "role": str}}}}
-detail_data = {} # {message_id: {day: str}}
+# データの一時保持
+game_data = {} 
+detail_data = {} 
 
 # --- 参加登録用の入力画面（ポップアップ） ---
 class RegistrationModal(discord.ui.Modal, title='交流戦 参加・役職登録'):
@@ -46,7 +47,6 @@ class RegistrationModal(discord.ui.Modal, title='交流戦 参加・役職登録
     async def on_submit(self, interaction: discord.Interaction):
         user_id = interaction.user.id
         user_name = interaction.user.display_name
-        # コンマ区切りの数字をリスト化
         selected_days = [d.strip() for d in self.days_input.value.split(',') if d.strip().isdigit()]
         role = self.role_input.value.upper()
 
@@ -54,15 +54,12 @@ class RegistrationModal(discord.ui.Modal, title='交流戦 参加・役職登録
             await interaction.response.send_message("役職は AT, GT, DF, ANY のどれかで入力してな！", ephemeral=True)
             return
 
-        # データの初期化と更新
         if self.message_id not in game_data:
             game_data[self.message_id] = {str(d): {} for d in range(self.start_day, self.end_day + 1)}
         
-        # 既存のその人の登録を全日削除（上書き用）
         for d in game_data[self.message_id]:
             game_data[self.message_id][d].pop(user_id, None)
 
-        # 選択された日に名前を追加
         for d in selected_days:
             if d in game_data[self.message_id]:
                 game_data[self.message_id][d][user_id] = {"name": user_name, "role": role}
@@ -89,7 +86,6 @@ class RegButtonView(discord.ui.View):
         self.message_id = message_id
         self.start = start
         self.end = end
-        # 詳細選択メニューを追加
         self.add_item(DetailSelect(message_id, start, end))
 
     @discord.ui.button(label="📝 参加・役職を登録", style=discord.ButtonStyle.primary, custom_id="reg_btn")
@@ -107,7 +103,6 @@ async def update_embed(interaction, message_id, start, end):
         count = len(users)
         
         if count > 0:
-            # 横並びで名前と役職を表示
             user_list = " / ".join([f"{info['name']} [{info['role']}]" for info in users.values()])
             val = f"┣ {user_list}"
         else:
